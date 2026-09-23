@@ -1,0 +1,73 @@
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#cdd8e8; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+  .page { position:relative; width:750px; height:1000px; margin:0 auto 24px; background:#f4f9ff; overflow:hidden; }
+
+  /* ===== 详情页 hero ===== */
+  .hero { position:relative; padding:38px 44px 20px; background:linear-gradient(135deg,#2563eb 0%,#06b6d4 100%); color:#fff; }
+  .hero .rank { font-size:80px; font-weight:900; line-height:0.9; letter-spacing:-2px; }
+  .hero .rank small { display:block; font-size:16px; font-weight:700; opacity:.85; letter-spacing:2px; margin-bottom:6px; }
+  .hero .repo { margin-top:10px; font-size:44px; font-weight:900; letter-spacing:-1px; }
+  .hero .owner { margin-top:3px; font-size:17px; font-weight:600; opacity:.94; }
+  .hero .owner b { color:#bdf0ff; font-weight:800; }
+  .hero .lang { position:absolute; top:44px; right:44px; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.35); padding:7px 15px; border-radius:20px; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .hero .lang .d { width:11px; height:11px; border-radius:50%; }
+
+  .body { padding:22px 44px 0; }
+  .tagline { font-size:24px; font-weight:800; color:#1f2a37; line-height:1.4; }
+  .tagline .accent { color:#2563eb; }
+
+  .block { margin-top:15px; }
+  .block .h { font-size:18px; font-weight:800; color:#2563eb; display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+  .block .h .bar { width:5px; height:18px; border-radius:3px; background:linear-gradient(180deg,#06b6d4,#2563eb); }
+
+  .problem { font-size:16.5px; color:#4a5568; line-height:1.52; }
+  .problem b { color:#1f2a37; }
+
+  .stats-row { display:flex; gap:12px; }
+  .stat { flex:1; background:#fff; border-radius:14px; padding:13px 8px; text-align:center; box-shadow:0 5px 16px rgba(37,99,235,.10); }
+  .stat .v { font-size:22px; font-weight:900; color:#2563eb; line-height:1.1; }
+  .stat .k { font-size:12px; color:#6b7a90; margin-top:5px; font-weight:600; }
+
+  .chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .chip { background:#e0ecff; color:#2563eb; font-size:13.5px; font-weight:700; padding:6px 12px; border-radius:15px; }
+  .chip.w { background:#e6fafe; color:#0891b2; }
+
+  .code { background:#0f2a4a; border-radius:14px; padding:14px 18px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14.5px; line-height:1.7; color:#cfe0f5; white-space:pre-wrap; word-break:break-all; }
+  .code .cm { color:#7c93b0; }
+  .code .c { color:#5eead4; font-weight:700; }
+  .code .cap { margin-top:10px; font-size:13px; color:#9fc4e8; font-family:-apple-system,"PingFang SC",sans-serif; white-space:normal; }
+
+  .foot { position:absolute; bottom:0; left:0; right:0; height:96px; background:#0f2a4a; color:#fff; display:flex; align-items:center; padding:0 44px; gap:28px; }
+  .foot .big { font-size:38px; font-weight:900; color:#5eead4; line-height:1; }
+  .foot .big small { display:block; font-size:13px; font-weight:700; color:#9fc4e8; margin-bottom:4px; }
+  .foot .meta { font-size:17px; color:#cfe0f5; }
+  .foot .bar-track { flex:1; height:9px; background:rgba(255,255,255,.16); border-radius:6px; overflow:hidden; }
+  .foot .bar-fill { height:100%; background:linear-gradient(90deg,#06b6d4,#5eead4); border-radius:6px; }
+
+  /* ===== 封面 ===== */
+  .cover { background:linear-gradient(155deg,#2563eb 0%,#0891b2 55%,#06b6d4 100%); color:#fff; display:flex; flex-direction:column; justify-content:center; padding:0 58px; }
+  .cover .badge { display:inline-flex; align-items:center; gap:8px; align-self:flex-start; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); padding:9px 18px; border-radius:24px; font-size:17px; font-weight:700; }
+  .cover .title { margin-top:26px; font-size:66px; font-weight:900; letter-spacing:-1px; line-height:1.05; }
+  .cover .sub { margin-top:14px; font-size:23px; font-weight:600; opacity:.92; }
+  .cover .date { margin-top:8px; font-size:18px; font-weight:600; opacity:.8; }
+  .cover .hero-num { margin-top:30px; font-size:104px; font-weight:900; line-height:0.95; letter-spacing:-3px; }
+  .cover .hero-num small { display:block; font-size:20px; font-weight:700; opacity:.85; letter-spacing:1px; margin-bottom:6px; }
+  .cover .ribbon { display:flex; gap:16px; margin-top:24px; }
+  .cover .rcell { flex:1; background:rgba(255,255,255,.14); border-radius:18px; padding:18px 12px; text-align:center; }
+  .cover .rcell .v { font-size:34px; font-weight:900; }
+  .cover .rcell .k { font-size:14px; font-weight:600; opacity:.9; margin-top:5px; }
+  .cover .preview { margin-top:26px; font-size:17px; line-height:1.9; opacity:.95; }
+  .cover .preview b { color:#bdf0ff; }
+  .cover .hint { position:absolute; bottom:30px; left:58px; right:58px; font-size:16px; font-weight:700; opacity:.92; display:flex; align-items:center; gap:10px; }
+  .cover .hint .d { width:8px; height:8px; border-radius:50%; background:#5eead4; }
+
+  /* ===== 关注页 ===== */
+  .follow { background:linear-gradient(160deg,#0f2a4a 0%,#1e3a8a 100%); color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:0 60px; }
+  .follow .k { font-size:20px; font-weight:700; opacity:.85; letter-spacing:3px; }
+  .follow .handle { margin-top:14px; font-size:62px; font-weight:900; letter-spacing:-1px; }
+  .follow .handle .at { color:#5eead4; }
+  .follow .slogan { margin-top:26px; font-size:26px; font-weight:600; line-height:1.5; }
+  .follow .divider { width:74px; height:6px; border-radius:3px; background:#5eead4; margin:34px 0 28px; }
+  .follow .tags { display:flex; flex-wrap:wrap; gap:10px; }
+  .follow .tags span { background:rgba(94,234,212,.16); border:1px solid rgba(94,234,212,.4); color:#a7f3d0; font-size:16px; font-weight:700; padding:10px 17px; border-radius:22px; }
+  .follow .sign { position:absolute; bottom:34px; left:60px; right:60px; font-size:16px; opacity:.8; }

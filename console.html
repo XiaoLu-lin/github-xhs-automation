@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>科技藏宝图 · 运营工作台</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#fff; --border:#e6e9ee; --ink:#16181d; --muted:#64748b;
+    --accent:#0ea5b7; --accent-soft:#eaf7f9; --topbg:#0f172a; --topink:#e6edf3; --topmuted:#94a3b8;
+    --green:#16a34a; --green-soft:#ecfdf3; --amber:#d97706; --amber-soft:#fef3c7; --red:#dc2626;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:13px;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;background:var(--topbg);color:var(--topink);padding:10px 18px;height:48px;}
+  .topbar .brand{font-size:14px;font-weight:500;}
+  .topbar .right{display:flex;align-items:center;gap:14px;}
+  .topbar .stat{font-size:11px;color:var(--topmuted);}
+  .topbar .refresh{cursor:pointer;font-size:12px;color:var(--accent);border:1px solid #1e293b;padding:4px 10px;border-radius:7px;}
+  .layout{display:flex;height:calc(100vh - 48px);}
+  /* 左侧菜单 */
+  .menu{width:184px;background:#0f172a;color:var(--topmuted);padding:14px 10px;flex-shrink:0;overflow:auto;}
+  .menu .nav{display:block;width:100%;text-align:left;background:none;border:none;color:var(--topmuted);font-size:13px;padding:10px 12px;border-radius:8px;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;gap:9px;}
+  .menu .nav:hover{background:#1e293b;color:var(--topink);}
+  .menu .nav.active{background:var(--accent);color:#fff;font-weight:500;}
+  .menu .nav .mi{width:18px;text-align:center;opacity:.9;}
+  .menu .foot{margin-top:18px;font-size:10px;color:#475569;line-height:1.7;padding:0 12px;}
+  .main{flex:1;overflow:auto;padding:20px 26px;display:flex;flex-direction:column;}
+  /* 通用块 */
+  .view-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;}
+  .view-head h1{font-size:17px;margin:0;font-weight:500;}
+  .view-head .sub{font-size:11px;color:var(--muted);}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:16px;margin-bottom:16px;}
+  .card h2{font-size:13px;margin:0 0 12px;font-weight:500;color:#334155;}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px 16px;}
+  .kpi .k{font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .kpi .v{font-size:22px;font-weight:500;line-height:1;}
+  .kpi .v small{font-size:12px;color:var(--muted);font-weight:400;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12px;}
+  .bar-row .lab{width:120px;flex-shrink:0;color:#334155;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bar-track{flex:1;background:#eef1f4;border-radius:6px;height:14px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;background:var(--accent);}
+  .bar-row .val{width:64px;flex-shrink:0;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);}
+  th{color:var(--muted);font-weight:500;font-size:11px;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;color:#334155;}
+  .chip{display:inline-block;font-size:11px;border-radius:11px;padding:2px 9px;background:var(--accent-soft);color:var(--accent);}
+  .chip.lang{background:#f1f5f9;color:#475569;}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+  .s-active{background:var(--green);} .s-config{background:var(--amber);} .s-off{background:#cbd5e1;}
+  .pill{font-size:11px;background:var(--green-soft);color:var(--green);border-radius:11px;padding:3px 10px;display:inline-block;}
+  .pill.off{background:#f1f5f9;color:var(--muted);}
+  .pill.amber{background:var(--amber-soft);color:var(--amber);}
+  .btn{background:var(--accent);color:#fff;font-size:12px;font-weight:500;border-radius:8px;padding:9px 14px;cursor:pointer;border:none;}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border);}
+  .btn:disabled{opacity:.6;cursor:default;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16181d;color:#fff;font-size:12px;padding:9px 16px;border-radius:8px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50;}
+  .toast.show{opacity:1;}
+  .empty{color:var(--muted);padding:30px;text-align:center;line-height:1.9;}
+  .muted{color:var(--muted);}
+  .note{font-size:11px;color:var(--muted);line-height:1.7;}
+  .col-card{display:flex;align-items:center;gap:11px;padding:11px;border:1px solid var(--border);border-radius:10px;margin-bottom:9px;background:#fff;}
+  .col-card .avatar{width:30px;height:30px;border-radius:9px;color:#fff;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .col-card .cn{font-size:13px;font-weight:500;}
+  .col-card .cm{font-size:10px;color:var(--muted);margin-top:3px;}
+  /* 通用文案块 */
+  .lab{font-size:11px;color:var(--muted);margin-bottom:5px;}
+  .copy-title{font-size:14px;font-weight:500;line-height:1.5;margin-bottom:12px;}
+  .copy-body{font-size:12px;line-height:1.7;color:#374151;background:#f7f8fa;border-radius:7px;padding:11px;white-space:pre-wrap;max-height:280px;overflow:auto;}
+  /* 发布视图：单期聚焦 + 内嵌审图 */
+  .pub-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .pub-sel{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;background:#fff;color:var(--ink);font-family:inherit;}
+  .pub-work{display:flex;gap:18px;align-items:flex-start;}
+  .pub-copy{flex:0 0 380px;max-width:380px;}
+  .pub-imgs{flex:1;min-width:0;}
+  .thumb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .thumb{position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;background:#fff;aspect-ratio:3/4;}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb-n{position:absolute;top:4px;left:4px;background:rgba(15,23,42,.72);color:#fff;font-size:10px;padding:1px 6px;border-radius:5px;}
+  .img-modal{position:fixed;inset:0;background:rgba(15,23,42,.92);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:100;}
+  .img-modal.show{display:flex;}
+  .img-modal img{max-width:90vw;max-height:86vh;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+  .img-modal-hint{color:#94a3b8;font-size:12px;margin-top:10px;}
+  .btns{display:flex;gap:8px;}
+  .btns .btn{flex:1;text-align:center;}
+  /* 复盘表格 */
+  .tbl-wrap{overflow:auto;}
+  /* 复盘-上传与AI */
+  .upload-box{border:2px dashed var(--border);border-radius:12px;padding:22px;text-align:center;background:#fff;cursor:pointer;transition:.15s;}
+  .upload-box:hover{border-color:var(--accent);background:var(--accent-soft);}
+  .upload-box.drag{border-color:var(--accent);background:var(--accent-soft);}
+  .upload-box .big{font-size:14px;font-weight:500;margin-bottom:5px;}
+  .upload-box .small{font-size:11px;color:var(--muted);}
+  .upload-box .dl{color:var(--accent);text-decoration:underline;cursor:pointer;}
+  .review-divider{height:1px;background:var(--border);margin:18px 0;}
+  .ai-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .ai-markdown{font-size:13px;line-height:1.75;color:#334155;}
+  .ai-markdown h1{font-size:17px;margin:14px 0 8px;font-weight:600;color:var(--ink);}
+  .ai-markdown h2{font-size:14px;margin:12px 0 6px;font-weight:600;color:var(--ink);}
+  .ai-markdown h3{font-size:13px;margin:10px 0 5px;font-weight:600;}
+  .ai-markdown p{margin:6px 0;}
+  .ai-markdown ul,.ai-markdown ol{margin:6px 0;padding-left:20px;}
+  .ai-markdown li{margin:3px 0;}
+  .ai-markdown code{background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12px;}
+  .ai-markdown strong{color:var(--ink);}
+  .report-list{display:flex;flex-direction:column;gap:8px;}
+  .report-item{border:1px solid var(--border);border-radius:9px;padding:10px 12px;background:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .report-item:hover{border-color:var(--accent);}
+  .report-item .meta{font-size:11px;color:var(--muted);}
+  .report-item .ttl{font-size:12px;font-weight:500;color:var(--ink);}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .seg button{border:0;background:#fff;padding:7px 14px;font-size:12px;cursor:pointer;color:var(--muted);}
+  .seg button.active{background:var(--accent);color:#fff;}
+  /* 选题 feed */
+  .filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+  .fchip{font-size:11px;border:1px solid var(--border);border-radius:11px;padding:4px 11px;cursor:pointer;background:#fff;color:var(--muted);}
+  .fchip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .feed-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  .feed-item{border:1px solid var(--border);border-radius:10px;padding:12px;background:#fff;}
+  .feed-item .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+  .feed-item .repo{font-size:13px;font-weight:500;}
+  .feed-item .repo a{color:var(--ink);text-decoration:none;}
+  .feed-item .repo a:hover{color:var(--accent);}
+  .feed-item .rk{font-size:10px;color:#fff;background:#475569;border-radius:5px;padding:1px 6px;margin-right:6px;}
+  .feed-item .meta{display:flex;gap:12px;font-size:11px;color:var(--muted);align-items:center;}
+  .feed-item .today{color:var(--accent);font-weight:500;}
+  .grow{height:5px;background:#eef1f4;border-radius:3px;margin-top:8px;overflow:hidden;}
+  .grow > div{height:100%;background:var(--accent);}
+  /* 设置表单 */
+  .form-row{margin-bottom:14px;}
+  .form-row label{display:block;font-size:12px;color:#334155;margin-bottom:6px;font-weight:500;}
+  .form-row input,.form-row textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
+  .form-row textarea{resize:vertical;min-height:90px;line-height:1.6;}
+  .form-row .hint{font-size:10px;color:var(--muted);margin-top:4px;}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .section-divider{height:1px;background:var(--border);margin:20px 0;}
+  /* 内容日历 */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+  .cal-nav{display:flex;gap:8px;align-items:center;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .cal-dow{font-size:11px;color:var(--muted);text-align:center;padding:4px 0;}
+  .cal-cell{border:1px solid var(--border);border-radius:10px;min-height:96px;padding:7px;background:#fff;}
+  .cal-cell.empty{background:transparent;border:none;}
+  .cal-cell.today{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);}
+  .cal-date{font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .cal-date.t{color:var(--accent);font-weight:600;}
+  .cal-iss{font-size:10.5px;padding:3px 6px;border-radius:6px;margin-bottom:4px;display:flex;align-items:center;gap:5px;cursor:pointer;}
+  .cal-iss .d{width:6px;height:6px;border-radius:50%;flex:none;}
+  .cal-iss.pub{background:var(--green-soft);color:var(--green);}
+  .cal-iss.pen{background:var(--amber-soft);color:var(--amber);}
+  .cal-iss.over{background:#fee2e2;color:var(--red);}
+  .cal-iss .pt{margin-left:auto;opacity:.75;font-variant-numeric:tabular-nums;}
+  .cal-modal{position:fixed;inset:0;background:rgba(15,23,42,.85);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .cal-modal.show{display:flex;}
+  .cal-card{background:#fff;border-radius:14px;width:460px;max-width:94vw;max-height:90vh;overflow:auto;padding:20px;}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand" id="brand">科技藏宝图 · 运营工作台</div>
+    <div class="right">
+      <div class="stat" id="globalStat">加载中…</div>
+      <div class="refresh" id="refreshBtn">↻ 刷新</div>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="menu" id="menu"></div>
+    <div class="main" id="main"><div class="empty">加载中…</div></div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+// 支持 GET（仅传 url）和 POST/配置（第二个参数为 fetch options，含 method/headers/body）。
+// 之前版本忽略第二个参数，导致所有写操作（标记发布/保存排期/上传/设置）实际发了 GET 而失效。
+const API = (p, opt)=>fetch(p, opt||{}).then(r=>r.json()).catch(e=>({ok:false, error:String(e)}));
+const el = (h)=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild;};
+const esc = (s)=>(s==null?'':String(s)).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const num = (s)=>parseInt(String(s).replace(/[^\d]/g,''))||0;
+const $ = (id)=>document.getElementById(id);
+
+// 访问方式守卫：本工作台必须经由本地服务(http://127.0.0.1:8787)打开，
+// 直接双击文件(file://)会让所有 fetch('/api/...') 被浏览器拦截，表现为"一直加载中 / 按钮无反应"。
+const IS_FILE = location.protocol==='file:';
+async function apiOrNull(p){ try{ const r=await fetch(p); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+
+const LANG_COLORS = {Python:'#3572A5',TypeScript:'#3178c6',JavaScript:'#f1e05a',Go:'#00ADD8',Shell:'#89e051',Rust:'#dea584',Java:'#b07219','C++':'#f34b7d',C:'#555555','C#':'#178600',Ruby:'#701516',PHP:'#4F5D95',Swift:'#F05138',Kotlin:'#A97BFF',Dart:'#00B4AB',Vue:'#41b883',HTML:'#e34c26',CSS:'#563d7c'};
+const langColor = (l)=>LANG_COLORS[l]||'#0ea5b7';
+
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
+function copyText(text,msg){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>toast(msg)).catch(()=>fb(text,msg));}
+  else fb(text,msg);
+}
+function fb(text,msg){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast(msg);}catch(e){toast('复制失败，请手动选择');}document.body.removeChild(ta);}
+
+const MENU = [
+  ['overview','总览','◎'],
+  ['publish','内容发布','✎'],
+  ['calendar','内容日历','◷'],
+  ['review','数据复盘','▤'],
+  ['reviewlog','复盘记录','📊'],
+  ['ideas','选题灵感','✦'],
+  ['automation','自动化','⚙'],
+  ['settings','设置','⚙'],
+];
+const VIEWS = {overview,publish,calendar,review,reviewlog,ideas,automation,settings};
+
+let state = {account:'科技藏宝图', pubCol:null, pubDate:null};
+
+function renderMenu(active){
+  const m=$('menu');m.innerHTML='';
+  MENU.forEach(([id,label,icon])=>{
+    const b=el(`<button class="nav ${id===active?'active':''}" data-v="${id}"><span class="mi">${icon}</span>${label}</button>`);
+    b.onclick=()=>{location.hash='#'+id;};
+    m.appendChild(b);
+  });
+  m.appendChild(el(`<div class="foot">GitHub 热点自动生成流水线<br>抓取 → 渲染 → 文案 → 发布</div>`));
+}
+
+function route(){
+  const v=(location.hash.replace('#','')||'overview');
+  renderMenu(v);
+  if(IS_FILE){
+    $('main').innerHTML=`<div class="card" style="margin-top:30px">
+      <h2 style="color:var(--red)">⚠️ 请用本地服务打开本页面</h2>
+      <p style="line-height:1.9">直接双击 HTML 文件（地址栏显示 <code>file://…</code>）时，浏览器会拦截所有对后端接口的访问，于是页面一直"加载中"、按钮点击毫无反应——这并不是功能没做，而是页面没连上后端。</p>
+      <p style="line-height:1.9">请在浏览器地址栏输入并访问：<br><b style="font-size:15px;color:var(--accent)">http://127.0.0.1:8787/console.html</b></p>
+      <p class="note">前提：本地服务已启动（在 github-xhs-automation 目录运行 <code>python3 server.py</code>）。</p>
+    </div>`;
+    return;
+  }
+  (VIEWS[v]||overview)();
+}
+
+/* ============ 总览 ============ */
+async function overview(){
+  const ov=await API('/api/overview');
+  state.account=ov.account||state.account;
+  $('brand').textContent=state.account+' · 运营工作台';
+  const now=new Date();
+  const sync=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  $('globalStat').textContent=`${ov.columns.length} 栏目 · ${ov.totals.issues} 期 · ${sync} 同步`;
+
+  const y=now.getFullYear(), mo=now.getMonth()+1;
+  const curMonth=y+'-'+String(mo).padStart(2,'0');
+  const cal=await API('/api/calendar?month='+curMonth);
+  let auto={};
+  try{ auto=(await API('/api/automations')).run_log||{}; }catch(e){}
+
+  const issues=cal.issues||[];
+  const nowStr=curMonth+'-'+String(now.getDate()).padStart(2,'0');
+  const isOverdue=(it)=>it.status!=='published'&&it.planned_at&&new Date(it.planned_at.replace(' ','T'))<now;
+  const pending=issues.filter(i=>i.status==='pending');
+  const todayPending=pending.filter(i=>i.date<=nowStr);
+  const overdue=pending.filter(isOverdue).length;
+  const publishedMonth=issues.filter(i=>i.status==='published').length;
+
+  // —— 今天要处理 ——
+  const toHandle=todayPending.length?todayPending:pending;
+  toHandle.sort((a,b)=>(a.planned_at||a.date).localeCompare(b.planned_at||b.date));
+  const handleHtml=toHandle.length?toHandle.map(it=>{
+    const ini=esc((it.col_name||'?').slice(0,1));
+    const late=it.date<nowStr?' · 该发了':'';
+    const sub=(it.has_copy?'已生成文案':'未生成文案')+(it.pages?(' · '+it.pages+' 张配图'):'')+(it.status==='pending'?' · 待发布':'')+late;
+    return `<div class="col-card" style="margin-bottom:10px">
+      <div class="avatar" style="background:${esc(it.col_color||'#0ea5b7')}">${ini}</div>
+      <div style="flex:1;min-width:0">
+        <div class="cn">${esc(it.col_name||'')} · ${esc(it.date)}</div>
+        <div class="cm">${esc(sub)}</div>
+      </div>
+      <button class="btn" data-go="publish" style="padding:7px 14px;font-size:12px;white-space:nowrap">去发布</button>
+    </div>`;
+  }).join(''):'<div class="empty">暂无待处理，去「内容日历」排下一期吧</div>';
+
+  // —— 本周排期（周一~周日）——
+  const dow=(now.getDay()-1+7)%7;
+  const mon=new Date(now); mon.setDate(now.getDate()-dow);
+  const byDate={}; issues.forEach(it=>{(byDate[it.date]=byDate[it.date]||[]).push(it);});
+  const wDows=['一','二','三','四','五','六','日'];
+  let wCells='';
+  for(let i=0;i<7;i++){
+    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const isT=ds===nowStr;
+    const list=byDate[ds]||[];
+    const dots=list.map(it=>{const c=calIssClass(it);const col=c==='pub'?'var(--green)':(c==='over'?'var(--red)':'var(--amber)');return `<span style="width:7px;height:7px;border-radius:50%;background:${col};display:inline-block;margin:0 1px"></span>`;}).join('');
+    wCells+=`<div style="text-align:center;padding:6px 0;border-radius:8px;${isT?'border:1px solid var(--accent);background:var(--accent-soft)':''}">
+      <div style="font-size:10px;color:var(--muted)">${wDows[(d.getDay()-1+7)%7]}</div>
+      <div style="font-size:13px;font-weight:${isT?'600':'400'};color:${isT?'var(--accent)':'var(--ink)'};margin:2px 0">${d.getDate()}</div>
+      <div style="height:10px">${dots}</div>
+    </div>`;
+  }
+
+  // —— 最近动态 ——
+  const feed=[];
+  if(auto&&auto.last_run) feed.push({t:auto.last_run,c:'var(--green)',txt:'自动生成完成 — '+esc(auto.date||'')+'（收录 '+(auto.repos||0)+' 个仓库）'});
+  issues.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3).forEach(it=>{
+    feed.push({t:it.date,c:it.status==='published'?'var(--green)':'var(--accent)',txt:(it.status==='published'?'已发布':'生成完成')+' — '+esc(it.col_name||'')+' '+esc(it.date)});
+  });
+  const feedHtml=feed.length?feed.map(f=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid #f1f3f5">
+    <span style="font-size:11px;color:#94a3b8;width:64px;flex-shrink:0">${esc((f.t||'').slice(5)||'')}</span>
+    <span style="width:6px;height:6px;border-radius:50%;background:${f.c};flex-shrink:0"></span>
+    <span style="font-size:12px;color:#334155">${f.txt}</span>
+  </div>`).join(''):'<div class="empty">暂无动态</div>';
+
+  const badge=todayPending.length
+    ? `<span style="font-size:11px;padding:3px 10px;border-radius:11px;background:#fee2e2;color:var(--red)">${toHandle.length} 项待处理</span>`
+    : `<span style="font-size:11px;padding:3px 10px;border-radius:11px;background:#f1f5f9;color:var(--muted)">${toHandle.length} 项</span>`;
+
+  $('main').innerHTML=`
+    <div class="view-head"><h1>总览</h1><div class="sub">${state.account} · 运营工作台</div></div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">今日待处理</div><div class="v" style="color:${todayPending.length?'var(--red)':'var(--ink)'}">${todayPending.length} <small>期</small></div></div>
+      <div class="kpi"><div class="k">本月已发布</div><div class="v" style="color:var(--green)">${publishedMonth} <small>期</small></div></div>
+      <div class="kpi"><div class="k">排期逾期</div><div class="v" style="color:${overdue?'var(--amber)':'var(--ink)'}">${overdue} <small>期</small></div></div>
+      <div class="kpi"><div class="k">累计期数</div><div class="v">${ov.totals.issues} <small>期</small></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 style="margin:0">今天要处理</h2>${badge}
+        </div>
+        ${handleHtml}
+        <div style="text-align:right;margin-top:10px"><span class="dl" style="color:var(--accent);cursor:pointer" data-go="publish">查看全部待处理 →</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="margin:0">本周排期</h2><span class="dl" style="color:var(--accent);cursor:pointer;font-size:11px" data-go="calendar">完整日历 →</span></div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">${wCells}</div>
+          <div style="margin-top:10px;font-size:11px;display:flex;gap:14px;color:var(--muted)">
+            <span><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px"></span>已发布</span>
+            <span><span style="width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block;margin-right:4px"></span>待发布</span>
+            <span><span style="width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block;margin-right:4px"></span>逾期</span>
+          </div>
+        </div>
+        <div class="card">
+          <h2 style="margin:0 0 10px">快捷操作</h2>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn ghost" data-go="publish" style="text-align:left;display:flex;align-items:center;gap:8px">✎ 内容发布</button>
+            <button class="btn ghost" data-go="calendar" style="text-align:left;display:flex;align-items:center;gap:8px">◷ 排期日历</button>
+            <button class="btn ghost" data-go="automation" style="text-align:left;display:flex;align-items:center;gap:8px">⚡ 运行生成</button>
+            <button class="btn ghost" data-go="review" style="text-align:left;display:flex;align-items:center;gap:8px">▤ 数据复盘</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2 style="margin:0 0 12px">最近动态</h2>
+      ${feedHtml}
+    </div>`;
+  $('main').querySelectorAll('[data-go]').forEach(b=>{ b.onclick=()=>{ location.hash='#'+b.dataset.go; }; });
+}
+
+/* ============ 内容发布 ============ */
+/* ============ 内容发布（单期聚焦 + 内嵌审图） ============ */
+let pubState={col:null,date:null,cols:[],issues:[],filter:'all'};
+let modalPngs=[],modalIdx=0;
+
+async function publish(){
+  const d=await API('/api/columns');
+  pubState.cols=d.columns;
+  const iss=await API('/api/issues');
+  pubState.issues=iss.issues||[];
+  pubState.filter=pubState.cols[0]?pubState.cols[0].id:'all';
+  const def=pubState.issues.find(i=>i.status==='pending')||pubState.issues[0];
+  pubState.col=def?def.col:null;
+  pubState.date=def?def.date:null;
+  renderPublish();
+}
+
+async function renderPublish(){
+  const cols=pubState.cols;
+  const chips=cols.map(c=>`<span class="fchip ${pubState.filter===c.id?'active':''}" data-c="${c.id}">${esc(c.name)}</span>`).join('');
+  $('main').innerHTML=`
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="view-head"><h1>内容发布</h1><div class="sub">审图 → 复制 → 标记发布</div></div>
+      <div class="filters" id="pubChips">${chips}</div>
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:stretch">
+        <div class="card" style="padding:14px;margin-bottom:0;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-shrink:0">
+            <h2 style="margin:0;font-size:13px">发布队列</h2>
+            <span class="note" id="pubQueueCount"></span>
+          </div>
+          <div id="pubQueue" style="flex:1;overflow:auto;min-height:0"></div>
+        </div>
+        <div class="card" id="pubWork" style="margin-bottom:0;overflow:auto;min-height:0"><div class="empty">加载中…</div></div>
+      </div>
+    </div>
+    <div class="img-modal" id="imgModal"><img id="imgModalImg" src="" alt=""><div class="img-modal-hint">点击任意处关闭 · ← → 切换</div></div>`;
+  $('pubChips').onclick=(e)=>{const t=e.target.closest('[data-c]');if(!t)return;pubState.filter=t.dataset.c;
+    const list=pubState.issues.filter(i=>i.col===pubState.filter);
+    const next=list[0];
+    if(next){pubState.col=next.col; pubState.date=next.date;}else{pubState.col=pubState.filter; pubState.date=null;}
+    renderPublish();};
+  if(!window.__modalBound){
+    document.addEventListener('keydown',(e)=>{
+      const m=$('imgModal'); if(!m||!m.classList.contains('show'))return;
+      if(e.key==='Escape')m.classList.remove('show');
+      else if(e.key==='ArrowRight'){if(modalPngs.length){modalIdx=(modalIdx+1)%modalPngs.length;$('imgModalImg').src=modalPngs[modalIdx];}}
+      else if(e.key==='ArrowLeft'){if(modalPngs.length){modalIdx=(modalIdx-1+modalPngs.length)%modalPngs.length;$('imgModalImg').src=modalPngs[modalIdx];}}
+    });
+    window.__modalBound=true;
+  }
+  renderQueue();
+  if(pubState.col&&pubState.date) loadPubIssue();
+}
+
+function renderQueue(){
+  const q=$('pubQueue'); if(!q) return;
+  const list=pubState.issues.filter(i=>pubState.filter==='all'||i.col===pubState.filter);
+  const pendingN=list.filter(i=>i.status==='pending').length;
+  $('pubQueueCount').textContent=pendingN+' 待处理';
+  if(!list.length){ q.innerHTML='<div class="empty">该栏目暂无生成的文章<br>运行每日生成任务后会出现在这里</div>'; return; }
+  q.innerHTML=list.map(it=>{
+    const sel=(it.col===pubState.col&&it.date===pubState.date);
+    const ini=esc((it.col_name||'?').slice(0,1));
+    const isPending=it.status==='pending';
+    const stl=it.status==='published'?'background:#ecfdf3;color:#16a34a':(isPending?'background:#fef3c7;color:#d97706':'background:#f1f5f9;color:#64748b');
+    const stt=it.status==='published'?'已发布':(isPending?'待处理':'未生成');
+    const late=(it.date<calTodayStr()&&isPending)?' · 该发了':'';
+    const sub=(it.has_copy?'已生成文案':'未生成文案')+(it.pages?(' · '+it.pages+' 张'):'')+late;
+    return `<div class="col-card" data-col="${it.col}" data-date="${it.date}" style="margin-bottom:8px;cursor:pointer;${sel?'border:1px solid var(--accent);background:var(--accent-soft)':'opacity:'+(it.status==='published'?0.7:1)}">
+      <div class="avatar" style="background:${esc(it.col_color||'#0ea5b7')}">${ini}</div>
+      <div style="flex:1;min-width:0">
+        <div class="cn">${esc(it.col_name||'')} · ${esc(it.date)}</div>
+        <div class="cm">${esc(sub)}</div>
+      </div>
+      <span style="font-size:11px;border-radius:11px;padding:2px 9px;white-space:nowrap;${stl}">${stt}</span>
+    </div>`;
+  }).join('');
+  q.querySelectorAll('[data-col]').forEach(r=>{ r.onclick=()=>{ pubState.col=r.dataset.col; pubState.date=r.dataset.date; renderQueue(); loadPubIssue(); }; });
+}
+
+async function loadPubIssue(){
+  const w=$('pubWork');
+  if(!pubState.col||!pubState.date){ w.innerHTML='<div class="empty">请选择左侧队列中的一期</div>'; return; }
+  const d=await API(`/api/article?col=${encodeURIComponent(pubState.col)}&date=${pubState.date}`);
+  if(!d.copy){w.innerHTML='<div class="empty">该日期暂无文案（copy.json）<br>运行 gen_copy 后可见</div>';return;}
+  const c=d.copy;
+  const st=d.status||'pending';
+  const full=c.title+"\n\n"+c.body+"\n\n"+(c.tags||[]).join(' ');
+  const pngs=d.pngs||[];
+  const thumbs=pngs.length?pngs.map((u,i)=>`<div class="thumb" data-i="${i}"><img src="${u}" loading="lazy"><span class="thumb-n">${String(i).padStart(2,'0')}</span></div>`).join(''):'<div class="empty">暂无配图</div>';
+  const sp=st==='published'?'<span id="pubStatusPill" style="font-size:11px;background:#ecfdf3;color:#16a34a;border-radius:11px;padding:3px 10px">已发布</span>':(st==='pending'?'<span id="pubStatusPill" style="font-size:11px;background:#fef3c7;color:#d97706;border-radius:11px;padding:3px 10px">待处理</span>':'<span id="pubStatusPill" style="font-size:11px;background:#f1f5f9;color:#64748b;border-radius:11px;padding:3px 10px">未生成</span>');
+  w.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500">审图 & 发布</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${sp}
+        <button class="btn" id="toggleStatus">${st==='published'?'标记待处理':'标记已发布'}</button>
+      </div>
+    </div>
+    <div class="pub-copy">
+      <div class="lab">${pubState.date} · 标题</div><div class="copy-title">${esc(c.title)}</div>
+      <div class="lab" style="margin-top:12px">正文</div><div class="copy-body">${esc(c.body)}</div>
+      <div class="lab" style="margin-top:12px">标签</div><div class="tags">${(c.tags||[]).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>
+      <div class="btns" style="margin-top:14px">
+        <button class="btn" id="copyAll">一键复制全文</button>
+        <button class="btn ghost" id="copyTitle">复制标题</button>
+      </div>
+      ${d.html?`<div class="btns" style="margin-top:8px"><button class="btn ghost" onclick="window.open('${d.html}','_blank')">打开整页 HTML</button></div>`:''}
+    </div>
+    <div class="pub-imgs">
+      <div class="lab" style="display:flex;justify-content:space-between;align-items:center">
+        <span>配图预览（${pngs.length} 张 · 点击放大，← → 切换）</span>
+        <button class="btn ghost" id="openFolder" style="padding:5px 12px;font-size:11px;margin:0">打开图片文件夹</button>
+      </div>
+      <div class="thumb-grid">${thumbs}</div>
+    </div>`;
+  $('copyAll').onclick=()=>copyText(full,'已复制全文，去小红书粘贴吧');
+  $('copyTitle').onclick=()=>copyText(c.title,'已复制标题');
+  const ofb=$('openFolder');
+  if(ofb)ofb.onclick=async()=>{
+    const r=await API(`/api/open-folder?col=${encodeURIComponent(pubState.col)}&date=${pubState.date}&which=png`);
+    if(r.ok)toast('已打开图片文件夹');else toast('打开失败：'+((r.error)||'路径不存在'));
+  };
+  $('toggleStatus').onclick=async()=>{
+    const ns=(st==='published')?'pending':'published';
+    const r=await API('/api/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({col:pubState.col,date:pubState.date,status:ns})});
+    if(r.ok){
+      const it=pubState.issues.find(i=>i.col===pubState.col&&i.date===pubState.date);
+      if(it) it.status=ns;
+      toast(ns==='published'?'已标记为已发布':'已标记为待处理');
+      renderQueue();
+      const pill=$('pubStatusPill'); if(pill) pill.textContent=ns==='published'?'已发布':'待处理';
+      $('toggleStatus').textContent=ns==='published'?'标记待处理':'标记已发布';
+    } else toast('状态更新失败');
+  };
+  w.querySelectorAll('.thumb').forEach(t=>{t.onclick=()=>openModal(pngs,+t.dataset.i);});
+  const modal=$('imgModal');
+  modal.onclick=()=>modal.classList.remove('show');
+}
+
+function openModal(pngs,i){
+  modalPngs=pngs;modalIdx=i;
+  const m=$('imgModal');
+  $('imgModalImg').src=pngs[i];
+  m.classList.add('show');
+}
+
+/* ============ 内容日历（发布排期） ============ */
+let calState = { year:0, month:0, issues:[] };
+
+function calMonthStr(){ return calState.year+'-'+String(calState.month).padStart(2,'0'); }
+function calTodayStr(){
+  const t=new Date();
+  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+}
+function calPlannedTime(pa){
+  if(!pa) return '';
+  const m=pa.match(/^\d{4}-\d{2}-\d{2}[ T](\d{2}:\d{2})/);
+  return m?m[1]:'';
+}
+function calIssClass(it){
+  if(it.status==='published') return 'pub';
+  if(it.planned_at){
+    const pt=new Date(it.planned_at.replace(' ','T'));
+    if(!isNaN(pt) && pt < new Date()) return 'over';
+  }
+  return 'pen';
+}
+
+async function calendar(){
+  if(!calState.year){ const t=new Date(); calState.year=t.getFullYear(); calState.month=t.getMonth()+1; }
+  $('main').innerHTML=`<div class="view-head"><h1>内容日历</h1><div class="sub">安排每期发布时间 · 点格子里的条目编辑排期</div></div><div class="empty">加载中…</div>`;
+  const d=await API('/api/calendar?month='+calMonthStr());
+  calState.issues=d.issues||[];
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const y=calState.year, mo=calState.month;
+  const daysIn=new Date(y,mo,0).getDate();
+  const firstDow=(new Date(y,mo-1,1).getDay()-1+7)%7; // 0=周一
+  const cells=[];
+  const todayStr=calTodayStr();
+  for(let i=0;i<firstDow;i++) cells.push(null);
+  for(let day=1;day<=daysIn;day++) cells.push(y+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0'));
+  while(cells.length%7) cells.push(null);
+  const byDate={};
+  calState.issues.forEach(it=>{ (byDate[it.date]=byDate[it.date]||[]).push(it); });
+  const dows=['一','二','三','四','五','六','日'];
+  const dowHtml=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const cellHtml=cells.map(c=>{
+    if(!c) return `<div class="cal-cell empty"></div>`;
+    const isToday=c===todayStr;
+    const list=(byDate[c]||[]).slice().sort((a,b)=>(a.planned_at||'').localeCompare(b.planned_at||''));
+    const chips=list.map((it,idx)=>{
+      const cls=calIssClass(it);
+      const tm=calPlannedTime(it.planned_at);
+      const short=esc((it.col_name||'').slice(0,4));
+      return `<div class="cal-iss ${cls}" data-i="${idx}" data-date="${c}">
+        <span class="d" style="background:${esc(it.col_color||'#0ea5b7')}"></span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${short}</span>
+        ${tm?`<span class="pt">${tm}</span>`:''}
+      </div>`;
+    }).join('');
+    return `<div class="cal-cell ${isToday?'today':''}">
+      <div class="cal-date ${isToday?'t':''}">${c.slice(5)}</div>
+      ${chips}
+    </div>`;
+  }).join('');
+  $('main').innerHTML=`
+    <div class="view-head"><h1>内容日历</h1><div class="sub">安排每期发布时间 · 点格子里的条目编辑排期</div></div>
+    <div class="cal-head">
+      <div class="cal-nav">
+        <button class="btn ghost" id="calPrev" style="padding:6px 12px">← 上个月</button>
+        <span style="font-size:14px;font-weight:500" id="calTitle">${y} 年 ${mo} 月</span>
+        <button class="btn ghost" id="calNext" style="padding:6px 12px">下个月 →</button>
+        <button class="btn ghost" id="calToday" style="padding:6px 12px">今天</button>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--muted)">
+        <span><span class="cal-iss pub" style="display:inline-flex;padding:2px 8px">●</span> 已发布</span>
+        <span><span class="cal-iss pen" style="display:inline-flex;padding:2px 8px">●</span> 待发布</span>
+        <span><span class="cal-iss over" style="display:inline-flex;padding:2px 8px">●</span> 已逾期</span>
+      </div>
+    </div>
+    <div class="cal-grid">${dowHtml}${cellHtml}</div>
+    <div class="cal-modal" id="calModal"><div class="cal-card" id="calCard"></div></div>
+    <div class="note" style="margin-top:14px">说明：自动汇总各栏目已生成的期数，颜色代表发布状态。点条目可设置「计划发布时间」与备注；逾期（设了时间但未发布且已过期）以红色标出。</div>`;
+  $('calPrev').onclick=()=>{calState.month--;if(calState.month<1){calState.month=12;calState.year--;}calendar();};
+  $('calNext').onclick=()=>{calState.month++;if(calState.month>12){calState.month=1;calState.year++;}calendar();};
+  $('calToday').onclick=()=>{const t=new Date();calState.year=t.getFullYear();calState.month=t.getMonth()+1;calendar();};
+  const modal=$('calModal');
+  modal.onclick=(e)=>{ if(e.target===modal) modal.classList.remove('show'); };
+  $('main').querySelectorAll('.cal-iss[data-date]').forEach(ch=>{
+    ch.onclick=(e)=>{ e.stopPropagation(); openCalModal(byDate[ch.dataset.date][+ch.dataset.i]); };
+  });
+}
+
+function openCalModal(it){
+  if(!it) return;
+  const modal=$('calModal'), card=$('calCard');
+  if(!modal||!card) return;
+  const plannedLocal=(it.planned_at||'').replace(' ','T');
+  const statusPill=it.status==='published'?'<span class="pill">已发布</span>':'<span class="pill amber">待处理</span>';
+  card.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0;font-size:15px">${esc(it.col_name||'')}</h2>${statusPill}
+    </div>
+    <div class="note" style="margin-bottom:14px">${esc(it.date)} · ${(it.pages||0)} 页 · ${it.has_copy?'已生成文案':'未生成文案'}</div>
+    <div class="form-row">
+      <label>计划发布时间</label>
+      <input type="datetime-local" id="calPlanned" value="${esc(plannedLocal)}" style="font-size:13px">
+    </div>
+    <div class="form-row">
+      <label>备注</label>
+      <textarea id="calNote" style="min-height:80px">${esc(it.note||'')}</textarea>
+    </div>
+    <div class="btns" style="margin-top:6px">
+      <button class="btn" id="calSave">保存排期</button>
+    </div>`;
+  $('calSave').onclick=async()=>{
+    const pa=$('calPlanned').value.replace('T',' ').trim();
+    const note=$('calNote').value;
+    const r=await API('/api/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({col:it.col,date:it.date,status:it.status,planned_at:pa,note:note})});
+    if(r.ok){ toast('排期已保存'); modal.classList.remove('show'); it.planned_at=r.planned_at; it.note=r.note; renderCalendar(); }
+    else toast('保存失败');
+  };
+  modal.classList.add('show');
+}
+
+/* ============ 数据复盘（上传 + AI 生成） ============ */
+function md(src){
+  if(!src) return '';
+  const lines=src.replace(/\r/g,'').split('\n');
+  let html='',inUl=false,inOl=false;
+  const closeLists=()=>{ if(inUl){html+='</ul>';inUl=false;} if(inOl){html+='</ol>';inOl=false;} };
+  for(let raw of lines){
+    const line=raw.trim();
+    if(!line){ closeLists(); continue; }
+    let mt;
+    if(mt=line.match(/^(#{1,3})\s+(.*)$/)){ closeLists(); const lv=mt[1].length; html+=`<h${lv}>${inline(mt[2])}</h${lv}>`; continue; }
+    if(mt=line.match(/^[-*]\s+(.*)$/)){ if(!inUl){closeLists();html+='<ul>';inUl=true;} html+=`<li>${inline(mt[1])}</li>`; continue; }
+    if(mt=line.match(/^\d+\.\s+(.*)$/)){ if(!inOl){closeLists();html+='<ol>';inOl=true;} html+=`<li>${inline(mt[1])}</li>`; continue; }
+    closeLists(); html+=`<p>${inline(line)}</p>`;
+  }
+  closeLists();
+  return html;
+  function inline(t){
+    return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+?)`/g,'<code>$1</code>');
+  }
+}
+function downloadText(filename,text,mime){
+  const blob=new Blob([text],{type:mime||'text/markdown'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function trendBars(trend){
+  if(!trend||!trend.length) return '<div class="empty">无</div>';
+  const maxR=Math.max(1,...trend.map(d=>d.reads)), maxF=Math.max(1,...trend.map(d=>d.followers));
+  return trend.map(d=>`<div class="bar-row"><div class="lab">${esc(d.date.slice(5))}</div><div class="bar-track"><div class="bar-fill" style="width:${(d.reads/maxR*100).toFixed(1)}%"></div></div><div class="val">阅 ${d.reads.toLocaleString()}</div></div><div class="bar-row"><div class="lab"></div><div class="bar-track"><div class="bar-fill" style="width:${(d.followers/maxF*100).toFixed(1)}%;background:#22c55e"></div></div><div class="val">粉 ${d.followers.toLocaleString()}</div></div>`).join('');
+}
+function topTable(list){
+  if(!list||!list.length) return '<div class="empty">无</div>';
+  return `<table><thead><tr><th>发布日期</th><th>笔记</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">涨粉</th></tr></thead><tbody>`+
+    list.map(r=>`<tr><td style="white-space:nowrap">${esc(r.date||'-')}</td><td>${esc(r.title)}</td><td class="num">${r.reads.toLocaleString()}</td><td class="num">${r.likes.toLocaleString()}</td><td class="num">${r.favorites.toLocaleString()}</td><td class="num">${r.comments.toLocaleString()}</td><td class="num">${r.followers.toLocaleString()}</td></tr>`).join('')+'</tbody></table>';
+}
+function noteTable(list){
+  if(!list||!list.length) return '<div class="empty">无</div>';
+  return `<table><thead><tr><th>发布日期</th><th>笔记</th><th class="num">阅读</th><th class="num">赞</th><th class="num">藏</th><th class="num">评</th><th class="num">涨粉</th><th>标签</th></tr></thead><tbody>`+
+    list.map(r=>`<tr><td style="white-space:nowrap">${esc(r.date||'-')}</td><td>${esc(r.title)}</td><td class="num">${r.reads.toLocaleString()}</td><td class="num">${r.likes.toLocaleString()}</td><td class="num">${r.favorites.toLocaleString()}</td><td class="num">${r.comments.toLocaleString()}</td><td class="num">${r.followers.toLocaleString()}</td><td style="white-space:nowrap">${r.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join(' ')}</td></tr>`).join('')+'</tbody></table>';
+}
+function tagTable(list){
+  if(!list||!list.length) return '<div class="empty">无</div>';
+  return `<table><thead><tr><th>标签</th><th class="num">篇数</th><th class="num">平均阅读</th><th class="num">总互动</th></tr></thead><tbody>`+
+    list.map(t=>`<tr><td><span class="chip">${esc(t.tag)}</span></td><td class="num">${t.count}</td><td class="num">${t.avg_reads.toLocaleString()}</td><td class="num">${t.interaction.toLocaleString()}</td></tr>`).join('')+'</tbody></table>';
+}
+async function uploadCsv(file){
+  const text=await file.text();
+  const r=await API('/api/review-upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:text})});
+  if(r.ok){ toast('已上传 '+r.count+' 条'); review(); }
+  else toast('上传失败：'+(r.error||'未知'));
+}
+async function runAi(){
+  const btn=$('aiBtn'); if(btn){btn.disabled=true;btn.textContent='生成中…';}
+  const r=await API('/api/review-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  if(btn){btn.disabled=false;btn.textContent='⚡ 生成 AI 复盘';}
+  if(r.ok){ showAi(r.markdown,r.created_at); toast('AI 复盘已生成'); review(); }
+  else toast('AI 失败：'+(r.error||'未知'));
+}
+function showAi(markdown,when){
+  const out=$('aiOut'); if(!out) return;
+  out.innerHTML=`<div class="ai-card"><div class="btns" style="justify-content:flex-end;margin-bottom:10px">
+      <button class="btn ghost" id="cpAi">复制全文</button>
+      <button class="btn ghost" id="exAi">导出 .md</button></div>
+      <div class="ai-markdown">${md(markdown)}</div></div>`;
+  $('cpAi').onclick=()=>copyText(markdown,'已复制复盘报告');
+  $('exAi').onclick=()=>downloadText('复盘报告-'+when.replace(/[:\s]/g,'-')+'.md',markdown,'text/markdown');
+}
+async function downloadTemplate(){
+  const r=await fetch('/api/review-template'); const text=await r.text();
+  downloadText('复盘数据模板.csv',text,'text/csv');
+}
+async function review(){
+  $('main').innerHTML=`<div class="view-head"><h1>数据复盘</h1><div class="sub">上传运营数据 · AI 生成复盘报告</div></div><div class="empty">加载中…</div>`;
+  const [d,r]=await Promise.all([API('/api/review-data'),API('/api/review-reports')]);
+  const rows=d.rows||[], m=d.metrics||{count:0}, reports=r.reports||[];
+  const hasData=rows.length>0;
+  $('main').innerHTML=`
+    <div class="view-head"><h1>数据复盘</h1><div class="sub">上传运营数据 · AI 生成复盘报告</div></div>
+    <div class="card"><h2>上传运营数据（CSV）</h2>
+      <div class="upload-box" id="upBox">
+        <div class="big">点击选择 CSV，或将文件拖拽到此处</div>
+        <div class="small">字段：标题 / 发布日期 / 阅读量 / 点赞 / 收藏 / 评论 / 涨粉 / 标签（标签用 | 分隔）<br>
+        ${hasData?('当前已上传 <b>'+rows.length+'</b> 条 · '):''}<span class="dl" id="dlTpl">下载模板</span></div>
+        <input type="file" id="upFile" accept=".csv,text/csv" style="display:none">
+      </div>
+    </div>
+    ${hasData?`
+    <div class="review-divider"></div>
+    <div class="card"><h2>基础数据</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="k">笔记数</div><div class="v">${m.count}</div></div>
+        <div class="kpi"><div class="k">总阅读</div><div class="v">${m.totals.reads.toLocaleString()}</div></div>
+        <div class="kpi"><div class="k">总涨粉</div><div class="v">${m.totals.followers.toLocaleString()}</div></div>
+        <div class="kpi"><div class="k">平均阅读</div><div class="v">${m.avg_reads.toLocaleString()}</div></div>
+        <div class="kpi"><div class="k">平均互动率</div><div class="v">${m.avg_interaction_rate}%</div></div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card"><h2>阅读 & 涨粉趋势（按日期）</h2>${trendBars(m.trend)}</div>
+      <div class="card"><h2>爆款 Top10（按阅读）</h2><div class="tbl-wrap">${topTable(m.top_by_reads)}</div></div>
+    </div>
+    <div class="card"><h2>选题表现（按标签平均阅读）</h2><div class="tbl-wrap">${tagTable(m.tags)}</div></div>
+    <div class="review-divider"></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 style="margin:0">AI 复盘报告</h2><button class="btn" id="aiBtn">⚡ 生成 AI 复盘</button>
+      </div>
+      <div id="aiOut"><div class="empty">点「生成 AI 复盘」让 AI 读数据出报告</div></div>
+    </div>
+    <div class="card"><h2>历史报告（${reports.length}）</h2>
+      <div class="report-list" id="reportList">${(reports.map(rp=>`<div class="report-item" data-id="${rp.id}"><div><div class="ttl">复盘报告 · ${rp.created_at}</div><div class="meta">${esc(rp.model||'')} · ${esc(rp.summary||'')}</div></div><span class="dl">查看</span></div>`).join(''))||'<div class="empty">暂无</div>'}</div>
+    </div>`:''}
+  `;
+  const box=$('upBox'), file=$('upFile');
+  if(box&&file){
+    box.onclick=(e)=>{ if(e.target.id!=='dlTpl') file.click(); };
+    $('dlTpl').onclick=(e)=>{e.stopPropagation();downloadTemplate();};
+    file.onchange=()=>{ if(file.files[0]) uploadCsv(file.files[0]); };
+    ['dragover','dragenter'].forEach(ev=>box.addEventListener(ev,e=>{e.preventDefault();box.classList.add('drag');}));
+    ['dragleave','drop'].forEach(ev=>box.addEventListener(ev,e=>{e.preventDefault();box.classList.remove('drag');}));
+    box.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) uploadCsv(f); });
+  }
+  const aiBtn=$('aiBtn'); if(aiBtn) aiBtn.onclick=runAi;
+  document.querySelectorAll('#reportList .report-item').forEach(it=>{
+    it.onclick=()=>{ const rep=reports.find(x=>x.id===it.dataset.id); if(rep) showAi(rep.markdown,rep.created_at); };
+  });
+}
+
+
+/* ============ 复盘记录（历史报告浏览） ============ */
+async function reviewlog(){
+  $('main').innerHTML=`
+    <div class="view-head"><h1>复盘记录</h1><div class="sub">历史复盘报告 · 按日期查看</div></div>
+    <div id="reviewBar" style="margin-bottom:14px"></div>
+    <div style="flex:1;min-height:0">
+      <iframe id="reviewFrame" style="width:100%;height:100%;border:1px solid var(--border);border-radius:10px;background:#fff" src=""></iframe>
+    </div>
+    <div class="empty" id="reviewEmpty" style="display:none">还没有复盘记录。把复盘 HTML 放到 <b>reviews/</b> 目录即可（文件名格式 YYYY-MM-DD.html）。</div>`;
+  const data=(await API('/api/reviews')).reviews||[];
+  const bar=$('reviewBar'), frame=$('reviewFrame'), empty=$('reviewEmpty');
+  if(!data.length){ frame.style.display='none'; empty.style.display='block'; return; }
+  bar.innerHTML=`<select id="reviewDate" style="font-size:13px;border:1px solid var(--border);border-radius:11px;padding:5px 12px;background:#fff;color:var(--ink);cursor:pointer">
+    ${data.map(r=>`<option value="${r.date}">${esc(r.title)}（${r.date}）</option>`).join('')}
+  </select>`;
+  const load=(d)=>{ frame.src='/reviews/'+d+'.html'; };
+  $('reviewDate').onchange=(e)=>load(e.target.value);
+  load(data[0].date);
+}
+
+/* ============ 选题灵感 ============ */
+async function ideas(){
+  $('main').innerHTML=`<div class="view-head"><h1>选题灵感</h1><div class="sub">从历史热点中淘可写题材</div></div><div class="empty">加载中…</div>`;
+  const h=await API('/api/history?col=github-trending&limit=90');
+  const hist=h.history||[];
+  const items=[];
+  hist.forEach(x=>(x.repos||[]).forEach(r=>items.push({...r,date:x.date})));
+  if(!items.length){$('main').innerHTML=`<div class="view-head"><h1>选题灵感</h1></div><div class="empty">暂无数据</div>`;return;}
+  const langs=[...new Set(items.map(i=>i.lang))].sort();
+  const state2={lang:'全部',sort:'today'};
+  const maxPct=Math.max(1,...items.map(i=>i.pct||0));
+  function render(){
+    let list=items.filter(i=>state2.lang==='全部'||i.lang===state2.lang);
+    if(state2.sort==='today')list.sort((a,b)=>num(b.today)-num(a.today));
+    else if(state2.sort==='total')list.sort((a,b)=>num(b.total)-num(a.total));
+    else if(state2.sort==='pct')list.sort((a,b)=>(b.pct||0)-(a.pct||0));
+    else list.sort((a,b)=>b.date.localeCompare(a.date));
+    const chips=langs.map(l=>`<span class="fchip ${state2.lang===l?'active':''}" data-l="${esc(l)}">${esc(l)}</span>`).join('')+
+      `<span class="fchip ${state2.lang==='全部'?'active':''}" data-l="全部">全部</span>`;
+    const sorts=[['today','今日新增星'],['total','总星数'],['pct','增速%'],['date','最新']];
+    const sortChips=sorts.map(([k,v])=>`<span class="fchip ${state2.sort===k?'active':''}" data-s="${k}">${v}</span>`).join('');
+    $('feed').innerHTML=list.slice(0,60).map(r=>{
+      const w=((r.pct||0)/maxPct*100).toFixed(1);
+      return `<div class="feed-item">
+        <div class="top"><div class="repo"><span class="rk">#${r.rank}</span><a href="https://github.com/${esc(r.owner)}/${esc(r.repo)}" target="_blank">${esc(r.owner)}/${esc(r.repo)}</a></div><span class="chip lang">${esc(r.lang)}</span></div>
+        <div class="meta"><span class="today">+${num(r.today).toLocaleString()}</span><span>总 ${num(r.total).toLocaleString()} ★</span><span>增速 ${r.pct||0}%</span><span>${r.date}</span></div>
+        <div class="grow"><div style="width:${w}%"></div></div>
+      </div>`;
+    }).join('')||'<div class="empty">该语言下暂无数据</div>';
+  }
+  $('main').innerHTML=`
+    <div class="view-head"><h1>选题灵感</h1><div class="sub">${items.length} 条历史热点 · 点击仓库名跳转 GitHub</div></div>
+    <div class="filters" id="langFilters">${langs.map(l=>`<span class="fchip" data-l="${esc(l)}">${esc(l)}</span>`).join('')}<span class="fchip active" data-l="全部">全部</span></div>
+    <div class="filters" id="sortFilters"><span class="fchip active" data-s="today">今日新增星</span><span class="fchip" data-s="total">总星数</span><span class="fchip" data-s="pct">增速%</span><span class="fchip" data-s="date">最新</span></div>
+    <div class="feed-grid" id="feed"></div>`;
+  $('langFilters').onclick=(e)=>{const t=e.target.closest('[data-l]');if(!t)return;state2.lang=t.dataset.l;[...$('langFilters').children].forEach(c=>c.classList.toggle('active',c.dataset.l===state2.lang));render();};
+  $('sortFilters').onclick=(e)=>{const t=e.target.closest('[data-s]');if(!t)return;state2.sort=t.dataset.s;[...$('sortFilters').children].forEach(c=>c.classList.toggle('active',c.dataset.s===state2.sort));render();};
+  render();
+}
+
+/* ============ 自动化 ============ */
+async function automation(){
+  $('main').innerHTML=`<div class="view-head"><h1>自动化</h1><div class="sub">流水线状态与手动触发</div></div><div class="empty">加载中…</div>`;
+  const d=await API('/api/automations');
+  const tasks=(d.tasks||[]).map(t=>`
+    <div class="col-card">
+      <div class="avatar" style="background:#1e293b;color:#94a3b8">⚙</div>
+      <div style="flex:1;min-width:0"><div class="cn">${esc(t.name)}</div>
+      <div class="cm">${esc(t.source||'')} · ${esc(t.schedule||'')}</div></div>
+      <span class="dot ${t.status==='configuring'?'s-config':'s-active'}"></span>
+    </div>`).join('');
+  const rl=d.run_log||{};
+  const statusPill=rl.status==='ok'?'<span class="pill">上次成功</span>':rl.status?('<span class="pill amber">'+esc(rl.status)+'</span>'):'<span class="pill off">未运行</span>';
+  const errHtml=rl.error?`<div class="note" style="color:var(--red)">错误：${esc(rl.error)}</div>`:'';
+  $('main').innerHTML=`
+    <div class="view-head"><h1>自动化</h1><div class="sub">每日 07:00 自动生成（GitHub Trending → 渲染 → 文案）</div></div>
+    <div class="card"><h2>定时任务</h2>${tasks||'<div class="empty">无</div>'}</div>
+    <div class="card">
+      <h2>运行日志 ${statusPill}</h2>
+      <div class="note">最近运行：<b>${esc(rl.last_run||'—')}</b> · 数据日期：<b>${esc(rl.date||'—')}</b> · 收录仓库：<b>${rl.repos||0}</b> 个</div>
+      ${errHtml}
+      <div style="margin-top:14px"><button class="btn" id="runBtn">立即运行一次</button></div>
+      <div class="note" id="runOut" style="margin-top:12px"></div>
+    </div>
+    <div class="note">手动触发将同步执行 generate_daily.py（含 Playwright 渲染，耗时约数十秒至数分钟）。</div>`;
+  $('runBtn').onclick=async()=>{
+    const btn=$('runBtn');btn.disabled=true;btn.textContent='运行中…';
+    $('runOut').textContent='正在生成，请稍候…';
+    const r=await API('/api/run');
+    btn.disabled=false;btn.textContent='立即运行一次';
+    if(r.returncode===0){toast('运行完成');}
+    else if(r.error){$('runOut').textContent='触发失败：'+r.error;}
+    const log=r.log||{};
+    $('runOut').textContent=`返回码 ${r.returncode} · 最近运行 ${log.last_run||'—'} · 收录 ${log.repos||0} 个`+(r.stderr?('\n'+r.stderr.slice(0,300)):'');
+  };
+}
+
+/* ============ 设置 ============ */
+async function settings(){
+  const cfg=await API('/api/config');
+  const cols=await API('/api/columns');
+  const ct=cfg.copy_template||{};
+  const ai=cfg.ai||{};
+  const colHtml=(cols.columns||[]).map(c=>`
+    <div class="col-card">
+      <div class="avatar" style="background:${c.color||'#0ea5b7'}">${esc(c.icon||'·')}</div>
+      <div style="flex:1;min-width:0"><div class="cn">${esc(c.name)}</div>
+      <div class="cm">${esc(c.source||'')} · ${esc(c.schedule||'')} · ${c.article_count||0} 期</div></div>
+      <span class="dot ${c.status==='configuring'?'s-config':'s-active'}"></span>
+    </div>`).join('');
+  $('main').innerHTML=`
+    <div class="view-head"><h1>设置</h1><div class="sub">账号 · 文案模板 · 合规 · 栏目</div></div>
+    <div class="card">
+      <h2>账号信息</h2>
+      <div class="form-row"><label>账号名称</label><input id="fAccount" value="${esc(cfg.account||'')}"></div>
+    </div>
+    <div class="card">
+      <h2>文案模板</h2>
+      <div class="form-row"><label>标题模板</label><input id="fTitle" value="${esc(ct.title||'')}"><div class="hint">可用占位符：{top1} = 登顶仓库 owner/repo</div></div>
+      <div class="form-row"><label>正文模板</label><textarea id="fBody">${esc(ct.body||'')}</textarea></div>
+      <div class="form-row"><label>标签（逗号分隔）</label><input id="fTags" value="${esc((ct.tags||[]).join(', '))}"></div>
+    </div>
+    <div class="card">
+      <h2>合规过滤词</h2>
+      <div class="form-row"><textarea id="fComp">${esc((cfg.compliance||[]).join(', '))}</textarea><div class="hint">逗号分隔，命中即剔除该仓库（翻墙 / VPN 等敏感内容）。</div></div>
+    </div>
+    <div class="card">
+      <h2>AI 复盘配置（OpenAI 兼容）</h2>
+      <div class="form-row"><label>Base URL</label><input id="fAiBase" value="${esc(ai.base_url||'')}"><div class="hint">OpenAI 兼容接口地址，如 https://api.openai.com/v1，或 DeepSeek / 通义地址</div></div>
+      <div class="form-row"><label>API Key</label><input id="fAiKey" type="password" value="${esc(ai.api_key||'')}"></div>
+      <div class="form-row"><label>模型</label><input id="fAiModel" value="${esc(ai.model||'')}" placeholder="gpt-4o"></div>
+      <div class="form-row"><label>提示词（人设 / 风格 / 额外要求）</label><textarea id="fAiPrompt">${esc(ai.prompt||'')}</textarea><div class="hint">留空则用默认。系统会自动把你的运营数据拼到前面，你只需写角色与侧重点。</div></div>
+    </div>
+    <div style="margin-bottom:14px"><button class="btn" id="saveBtn">保存设置</button> <span id="saveMsg" class="note"></span></div>
+    <div class="section-divider"></div>
+    <div class="card"><h2>栏目管理</h2>${colHtml||'<div class="empty">暂无栏目</div>'}</div>`;
+  $('saveBtn').onclick=async()=>{
+    const newCfg={
+      account:$('fAccount').value.trim(),
+      copy_template:{
+        title:$('fTitle').value.trim(),
+        body:$('fBody').value,
+        tags:$('fTags').value.split(',').map(s=>s.trim()).filter(Boolean)
+      },
+      compliance:$('fComp').value.split(',').map(s=>s.trim()).filter(Boolean),
+      ai:{
+        base_url:$('fAiBase').value.trim(),
+        api_key:$('fAiKey').value.trim(),
+        model:$('fAiModel').value.trim(),
+        prompt:$('fAiPrompt').value
+      }
+    };
+    const r=await API('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newCfg)});
+    $('saveMsg').textContent=r.ok?'已保存 ✓':'保存失败';
+    if(r.ok){state.account=newCfg.account;$('brand').textContent=newCfg.account+' · 运营工作台';}
+  };
+}
+
+$('refreshBtn').onclick=()=>route();
+window.addEventListener('hashchange',route);
+window.addEventListener('DOMContentLoaded',route);
+route();
+// 启动后探测后端是否可达；不可达时给出明确提示，避免静默"加载中"
+if(!IS_FILE){
+  apiOrNull('/api/overview').then(d=>{
+    if(!d){
+      const g=$('globalStat'); if(g) g.textContent='后端未连接';
+      const m=$('main');
+      if(m && /加载中/.test(m.textContent)){
+        m.innerHTML=`<div class="card" style="margin-top:30px">
+          <h2 style="color:var(--red)">⚠️ 无法连接后端服务</h2>
+          <p class="note">请确认本地服务已启动：在 github-xhs-automation 目录运行 <code>python3 server.py</code>，然后刷新本页。</p>
+        </div>`;
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

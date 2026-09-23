@@ -1,0 +1,33 @@
+# ===== 生成产物（脚本产出，不入库）=====
+output/
+output_ai_news/
+output_weekly/
+new/
+reviews/
+
+# ===== 每日数据 / 运行日志 =====
+data_*.json
+trending_*.json
+readme_*.json
+ai_news_*.json
+run_log*.json
+
+# ===== 密钥 / 本地配置（config.json 含 AI key，必须忽略！）=====
+config.json
+
+# ===== 运行态 =====
+server.log
+server.pid
+
+# ===== Python =====
+__pycache__/
+*.pyc
+
+# ===== 系统 =====
+.DS_Store
+
+# ===== WorkBuddy 内部项目数据（记忆 / 自动化，含隐私，禁止入库）=====
+.workbuddy/
+
+# ===== 临时测试产物 =====
+test_open_news_out.json

@@ -1,0 +1,45 @@
+{
+  "account": "科技藏宝图",
+  "columns": [
+    {
+      "id": "github-trending",
+      "name": "GitHub 热点",
+      "icon": "G",
+      "color": "#0ea5b7",
+      "source": "GitHub Trending",
+      "schedule": "每日 07:00",
+      "output_dir": "output",
+      "status": "active"
+    },
+    {
+      "id": "ai-papers",
+      "name": "AI 论文速递",
+      "icon": "A",
+      "color": "#6366f1",
+      "source": "arXiv",
+      "schedule": "每日",
+      "output_dir": "output/ai-papers",
+      "status": "active"
+    },
+    {
+      "id": "tools",
+      "name": "工具盘点",
+      "icon": "T",
+      "color": "#f59e0b",
+      "source": "手动 / 聚合",
+      "schedule": "每周",
+      "output_dir": "output/tools",
+      "status": "configuring"
+    },
+    {
+      "id": "github-weekly",
+      "name": "GitHub 周榜",
+      "icon": "W",
+      "color": "#0ea5b7",
+      "source": "GitHub Weekly Trending",
+      "schedule": "每周一 07:00",
+      "output_dir": "output_weekly",
+      "status": "active"
+    }
+  ]
+}
