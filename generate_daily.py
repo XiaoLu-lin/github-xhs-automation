@@ -135,6 +135,9 @@ def build_from_trending(date, trending, readmes):
             "lang": lang, "lang_color": lang_color,
             "tagline_full": tag_full, "tagline_hl": tag_hl,
             "problem": desc or f"{full} 是一个开源项目。",
+            # desc：完整未截断的真实描述（英文或中文），作为小红书正文的主内容源；
+            # 中文富化层(ai_cn)在无 LLM key 时会原样保留，不再用模板覆盖。
+            "desc": desc,
             "stats": stats, "chips": chips, "code": code,
             "code_caption": f"{lic_short} 开源 · 详见项目 README",
             "today": f"+{today}" if today else "—",

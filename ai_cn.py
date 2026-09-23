@@ -196,10 +196,10 @@ def _local_cn(repos):
         # 先裁掉「中文 + 英文对照」尾巴里的纯英文翻译段，保留中文主体
         if r.get("problem"):
             r["problem"] = _strip_trailing_en(r["problem"])
-        # problem 已大部分中文（手改/LLM/含术语的中文稿）→ 整条跳过，保留原样；
-        # 仅「纯英文主导」的描述（中文占比 < 0.2）才走下方模板重新生成全中文
+        # 已有真实描述（desc 非空，无论中英文）或已中文化的 problem → 原样保留，绝不用模板覆盖；
+        # 仅「既无真实描述、又非中文」的条目才走下方模板重新生成（基于语言/话题/星标，不编造）
         prob0 = r.get("problem", "")
-        if prob0 and _cn_ratio(prob0) >= 0.2:
+        if r.get("desc") or (prob0 and _cn_ratio(prob0) >= 0.2):
             continue
 
         lang = r.get("lang") or "Other"
@@ -283,6 +283,7 @@ def _llm_cn(repos, ai):
             r["tagline_full"] = a["tagline_cn"]
         if a.get("problem_cn"):
             r["problem"] = a["problem_cn"]
+            r["desc"] = a["problem_cn"]   # 中文翻译同步进 desc，正文(pure desc)也变中文
         if a.get("chips_cn") and isinstance(a["chips_cn"], list):
             r["chips"] = [str(x) for x in a["chips_cn"] if x][:5]
         if a.get("code_caption_cn"):

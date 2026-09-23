@@ -3,7 +3,13 @@
 
 输出：output/<date>/copy.json
 字段：{ date, title, body, tags }
-body 由真实仓库 tagline 拼装（非编造事实），供控制台「一键复制」直接发小红书。
+body 由真实仓库描述拼装（非编造），供控制台「一键复制」直接发小红书。
+
+正文规则：
+  - 主行用仓库「完整真实描述」(desc)，不截断词/句；超过预算时只在空格/标点处断。
+  - 每条附一行真实数据（今日★ / 总星 / 协议），不写「因字数限制已省略」之类补丁语。
+  - 总字数上限 1000（中文按字符计）。先全局收缩最长描述，仍超限则从末尾删除
+    排名最低的条目（呈现“Top N”而非残缺“Top10”），绝不波及已写内容。
 """
 import json
 import re
@@ -12,32 +18,47 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 
+# 可作为断点的中英文标点 / 空白（用于安全截断，绝不在词中间硬切）
+_BREAK = " ，。、；：!?；;:.,!? \n\t★·•·"
 
-def _first_sentence(s, n):
-    """把 s 截到 n 字以内，优先在句末/分句标点处断，保证是一句完整的话；
-    绝不在词中间硬切，也不输出「因字数限制已省略」之类的补丁语。"""
+
+def _trim_safe(s, n):
+    """把 s 收到 n 字以内，优先在空格/标点处断，绝不在词中间硬切。
+
+    英文描述没有中文标点时退到最后一个空格（词边界）；都没有时才退到 n 处。
+    断点后补「…」表示被收起，不输出任何“已省略”提示语。
+    """
     if len(s) <= n:
         return s
-    cut = -1
-    for i, ch in enumerate(s):
-        if ch in "。！？；，" and i <= n:
-            cut = i + 1
-    if cut > 0:
-        return s[:cut].rstrip("，、； ")
-    return s[:n].rstrip("，、； ")
+    cut = s[:n]
+    # 优先：在预算内最后一个标点/空格处断
+    best = -1
+    for ch in _BREAK:
+        i = cut.rfind(ch)
+        if i > best:
+            best = i
+    if best > n * 0.5:                 # 至少用掉一半预算，避免截得太短
+        return s[:best].rstrip(_BREAK) + "…"
+    # 退路：英文在 n 之前的最后一个空格（词边界）
+    sp = cut.rfind(" ")
+    if sp > n * 0.5:
+        return s[:sp].rstrip(_BREAK) + "…"
+    return cut.rstrip(_BREAK) + "…"
 
 
-def _strip_repo_prefix(tag, repo):
-    """tagline_full 惯例以「repo：」开头，而正文行前缀已展示仓库名。
-
-    去掉这段重复既避免「repo｜repo…」的观感，也把预算让给真正的中文简介。
-    """
-    t = (tag or "").strip()
-    for sep in ("：", ":"):
-        p = f"{repo}{sep}"
-        if t.startswith(p):
-            return t[len(p):].strip()
-    return t
+def _fmt_stat(r):
+    """从结构化字段拼一行真实数据，绝不编造。"""
+    parts = []
+    today = r.get("today", "")
+    total = r.get("total", "")
+    lic = (r.get("author_note") or "").replace(" 开源", "").strip()
+    if today and today != "—":
+        parts.append(f"今日 {today}")
+    if total:
+        parts.append(f"总星 {total}")
+    if lic:
+        parts.append(lic)
+    return " · ".join(parts)
 
 
 def make_copy(date, repos, period="今日", freq="每天"):
@@ -57,8 +78,7 @@ def make_copy(date, repos, period="今日", freq="每天"):
         f"{word_freq} 1 分钟，挖到值得收藏的技术宝藏 🔍",
         "关注 @科技藏宝图 ，技术干货不迷路～",
     ]
-    # 预算按「全局」分配而非平分：先假设每条都写全，只有整体超 1000 字时，
-    # 才从当前最长的 tagline 开始逐步收缩。避免总量明明够、个别条目却被截断。
+
     # 同名仓库（如两个 skills）用 owner/repo 区分，避免正文里分不清
     repo_counts = {}
     for r in repos:
@@ -70,72 +90,72 @@ def make_copy(date, repos, period="今日", freq="每天"):
         repo = r.get("repo", "")
         owner = r.get("owner", "")
         label = f"{owner}/{repo}" if repo_counts.get(repo, 0) > 1 else repo
-        prob = r.get("problem", "")
+        desc = (r.get("desc") or "").strip()
+        if not desc:
+            # 无真实描述：退而用语言/话题推导一句事实文案（不编造“开源项目”废话）
+            lang = r.get("lang") or ""
+            chips = [c for c in (r.get("chips") or [])
+                     if c and c not in ("开源", "开源项目") and "开源" not in c]
+            if chips:
+                desc = f"{lang} 项目，聚焦 {chips[0]}"
+            else:
+                desc = f"{lang} 开源项目" if lang else "开源项目"
         entries.append({
             "prefix": f"{rank}. {label}｜",
-            "tag": _strip_repo_prefix(r.get("tagline_full", ""), repo),
-            "line2": f"   {prob}" if prob else "",
-            "cut": None,          # None = 不收缩；整数 = 收缩到该字数
+            "desc": desc,
+            "stat": _fmt_stat(r),
+            "cut": None,            # None = 不收缩；整数 = 收缩到该字数
         })
 
-    def _shrink(tag, n):
-        """收缩到 n 字以内，优先在标点处断，never 词中硬切。"""
-        if len(tag) <= n:
-            return tag
-        cut = -1
-        for i, ch in enumerate(tag):
-            if ch in "：:，,；;、" and i <= n:
-                cut = i
-        t = tag[:cut] if cut > 0 else tag[:n]
-        return f"{t.rstrip('，、：: ')}…"
-
-    def _render_entries():
-        """只渲染仓库条目块（不含标题行与结尾 footer），便于单独控预算。"""
+    def _render():
         out = []
         for e in entries:
-            tag = e["tag"] if e["cut"] is None else _shrink(e["tag"], e["cut"])
-            out.append(f"{e['prefix']}{tag}")
-            if e["line2"]:
-                out.append(e["line2"])
+            d = e["desc"] if e["cut"] is None else _trim_safe(e["desc"], e["cut"])
+            out.append(f"{e['prefix']}{d}")
+            if e["stat"]:
+                out.append(f"   ⭐ {e['stat']}")
         return "\n".join(out)
 
-    def _assemble(entries_block):
-        return f"{header}\n\n{entries_block}\n\n" + "\n".join(footer)
+    def _assemble(block):
+        return f"{header}\n\n{block}\n\n" + "\n".join(footer)
 
     # 给结尾 footer 预留固定空间：footer 永远整段保留，不进入压缩/截断逻辑。
     footer_len = sum(len(f) for f in footer) + len(footer)  # 各 footer 行 + 换行
-    overhead = len(header) + 4 + footer_len                  # 标题行 + 空行 + footer 区
+    overhead = len(header) + 4 + footer_len
     budget = LIMIT - overhead
     if budget < 200:
         budget = 200
 
-    entries_block = _render_entries()
-    for _ in range(400):                      # 有界循环，防御性上限
-        if len(entries_block) <= budget:
+    block = _render()
+    # 有界循环：整体超预算时，从当前最长描述开始逐步收缩（词/句边界安全）
+    for _ in range(400):
+        if len(block) <= budget:
             break
-        cand = max(entries, key=lambda e: len(e["tag"]) if e["cut"] is None else e["cut"])
-        cur = len(cand["tag"]) if cand["cut"] is None else cand["cut"]
-        if cur <= 12:                         # 已无可压缩空间，交给下方兜底
+        cand = max(entries, key=lambda e: len(e["desc"]) if e["cut"] is None else e["cut"])
+        cur = len(cand["desc"]) if cand["cut"] is None else cand["cut"]
+        if cur <= 16:               # 已无可压缩空间，交给下方删条目兜底
             break
-        cand["cut"] = max(12, cur - 4)
-        entries_block = _render_entries()
+        cand["cut"] = max(16, cur - 4)
+        block = _render()
 
-    body = _assemble(entries_block)
-    # 兜底：仅裁仓库条目块尾部，绝不波及 footer（绝不出现「因字数限制已省略」）
-    # 关键：在最后一个完整句/分句处断开，绝不词中硬切，保证读来是一篇完整的话
+    body = _assemble(block)
+    # 兜底 1：仅裁条目块尾部，在最后一个完整句/词边界断开，绝不词中硬切、绝不波及 footer
     if len(body) > LIMIT:
         excess = len(body) - LIMIT
-        cut = len(entries_block) - excess
+        cut = len(block) - excess
         bp = -1
         for i in range(cut, -1, -1):
-            if entries_block[i] in "。！？；，、 \n":
+            if block[i] in _BREAK:
                 bp = i
                 break
-        if bp > 0:
-            entries_block = entries_block[:bp].rstrip("，、； \n")
-        else:
-            entries_block = entries_block[:cut].rstrip("，、； \n")
-        body = _assemble(entries_block)
+        block = block[:bp].rstrip(_BREAK) if bp > 0 else block[:cut].rstrip(_BREAK)
+        body = _assemble(block)
+
+    # 兜底 2：极端情况下，从末尾删除排名最低的整条，呈现“Top N”而非残缺“Top10”
+    while len(body) > LIMIT and len(entries) > 1:
+        entries.pop()
+        block = _render()
+        body = _assemble(block)
 
     tags = ["#GitHub热点", "#开源", "#AI", "#程序员", "#科技藏宝图"]
     return {"date": date, "title": title, "body": body, "tags": tags}
@@ -173,7 +193,7 @@ def main(date=None, out_dir=None, period="今日"):
     (out_dir / "copy.json").write_text(
         json.dumps(copy, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print(f"已生成 {out_dir / 'copy.json'}")
+    print(f"已生成 {out_dir / 'copy.json'}  (正文 {len(copy['body'])} 字)")
 
 
 if __name__ == "__main__":
