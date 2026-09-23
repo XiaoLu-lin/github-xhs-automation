@@ -23,9 +23,11 @@ import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-# 内置 Playwright 的 venv 解释器（render.py 依赖它）；
-# 部署到服务器时用系统 python3：RENDER_PY=/usr/bin/python3（服务器系统 python3 已装 playwright 包）
-VENV_PY = os.environ.get("RENDER_PY", "/Users/lhl/.workbuddy/binaries/python/envs/default/bin/python")
+# 内置 Playwright 的 venv 解释器（render.py 依赖它）。
+# 本地 Mac 用 workbuddy 隔离 venv；部署到服务器时该路径不存在，自动回退系统 python3
+# （服务器系统 python3 已装 playwright 包）。也可用环境变量 RENDER_PY 强制指定。
+_LOCAL_VENV = "/Users/lhl/.workbuddy/binaries/python/envs/default/bin/python"
+VENV_PY = os.environ.get("RENDER_PY") or (_LOCAL_VENV if os.path.exists(_LOCAL_VENV) else "python3")
 # 中文富化（LLM 优先，无 key 降级本地模板）
 import ai_cn
 
