@@ -202,10 +202,8 @@ const MENU = [
   ['review','数据复盘','▤'],
   ['reviewlog','复盘记录','📊'],
   ['ideas','选题灵感','✦'],
-  ['automation','自动化','⚙'],
-  ['settings','设置','⚙'],
 ];
-const VIEWS = {overview,publish,calendar,review,reviewlog,ideas,automation,settings};
+const VIEWS = {overview,publish,calendar,review,reviewlog,ideas};
 
 let state = {account:'科技藏宝图', pubCol:null, pubDate:null};
 
@@ -810,104 +808,6 @@ async function ideas(){
   $('langFilters').onclick=(e)=>{const t=e.target.closest('[data-l]');if(!t)return;state2.lang=t.dataset.l;[...$('langFilters').children].forEach(c=>c.classList.toggle('active',c.dataset.l===state2.lang));render();};
   $('sortFilters').onclick=(e)=>{const t=e.target.closest('[data-s]');if(!t)return;state2.sort=t.dataset.s;[...$('sortFilters').children].forEach(c=>c.classList.toggle('active',c.dataset.s===state2.sort));render();};
   render();
-}
-
-/* ============ 自动化 ============ */
-async function automation(){
-  $('main').innerHTML=`<div class="view-head"><h1>自动化</h1><div class="sub">流水线状态与手动触发</div></div><div class="empty">加载中…</div>`;
-  const d=await API('/api/automations');
-  const tasks=(d.tasks||[]).map(t=>`
-    <div class="col-card">
-      <div class="avatar" style="background:#1e293b;color:#94a3b8">⚙</div>
-      <div style="flex:1;min-width:0"><div class="cn">${esc(t.name)}</div>
-      <div class="cm">${esc(t.source||'')} · ${esc(t.schedule||'')}</div></div>
-      <span class="dot ${t.status==='configuring'?'s-config':'s-active'}"></span>
-    </div>`).join('');
-  const rl=d.run_log||{};
-  const statusPill=rl.status==='ok'?'<span class="pill">上次成功</span>':rl.status?('<span class="pill amber">'+esc(rl.status)+'</span>'):'<span class="pill off">未运行</span>';
-  const errHtml=rl.error?`<div class="note" style="color:var(--red)">错误：${esc(rl.error)}</div>`:'';
-  $('main').innerHTML=`
-    <div class="view-head"><h1>自动化</h1><div class="sub">每日 07:00 自动生成（GitHub Trending → 渲染 → 文案）</div></div>
-    <div class="card"><h2>定时任务</h2>${tasks||'<div class="empty">无</div>'}</div>
-    <div class="card">
-      <h2>运行日志 ${statusPill}</h2>
-      <div class="note">最近运行：<b>${esc(rl.last_run||'—')}</b> · 数据日期：<b>${esc(rl.date||'—')}</b> · 收录仓库：<b>${rl.repos||0}</b> 个</div>
-      ${errHtml}
-      <div style="margin-top:14px"><button class="btn" id="runBtn">立即运行一次</button></div>
-      <div class="note" id="runOut" style="margin-top:12px"></div>
-    </div>
-    <div class="note">手动触发将同步执行 generate_daily.py（含 Playwright 渲染，耗时约数十秒至数分钟）。</div>`;
-  $('runBtn').onclick=async()=>{
-    const btn=$('runBtn');btn.disabled=true;btn.textContent='运行中…';
-    $('runOut').textContent='正在生成，请稍候…';
-    const r=await API('/api/run');
-    btn.disabled=false;btn.textContent='立即运行一次';
-    if(r.returncode===0){toast('运行完成');}
-    else if(r.error){$('runOut').textContent='触发失败：'+r.error;}
-    const log=r.log||{};
-    $('runOut').textContent=`返回码 ${r.returncode} · 最近运行 ${log.last_run||'—'} · 收录 ${log.repos||0} 个`+(r.stderr?('\n'+r.stderr.slice(0,300)):'');
-  };
-}
-
-/* ============ 设置 ============ */
-async function settings(){
-  const cfg=await API('/api/config');
-  const cols=await API('/api/columns');
-  const ct=cfg.copy_template||{};
-  const ai=cfg.ai||{};
-  const colHtml=(cols.columns||[]).map(c=>`
-    <div class="col-card">
-      <div class="avatar" style="background:${c.color||'#0ea5b7'}">${esc(c.icon||'·')}</div>
-      <div style="flex:1;min-width:0"><div class="cn">${esc(c.name)}</div>
-      <div class="cm">${esc(c.source||'')} · ${esc(c.schedule||'')} · ${c.article_count||0} 期</div></div>
-      <span class="dot ${c.status==='configuring'?'s-config':'s-active'}"></span>
-    </div>`).join('');
-  $('main').innerHTML=`
-    <div class="view-head"><h1>设置</h1><div class="sub">账号 · 文案模板 · 合规 · 栏目</div></div>
-    <div class="card">
-      <h2>账号信息</h2>
-      <div class="form-row"><label>账号名称</label><input id="fAccount" value="${esc(cfg.account||'')}"></div>
-    </div>
-    <div class="card">
-      <h2>文案模板</h2>
-      <div class="form-row"><label>标题模板</label><input id="fTitle" value="${esc(ct.title||'')}"><div class="hint">可用占位符：{top1} = 登顶仓库 owner/repo</div></div>
-      <div class="form-row"><label>正文模板</label><textarea id="fBody">${esc(ct.body||'')}</textarea></div>
-      <div class="form-row"><label>标签（逗号分隔）</label><input id="fTags" value="${esc((ct.tags||[]).join(', '))}"></div>
-    </div>
-    <div class="card">
-      <h2>合规过滤词</h2>
-      <div class="form-row"><textarea id="fComp">${esc((cfg.compliance||[]).join(', '))}</textarea><div class="hint">逗号分隔，命中即剔除该仓库（翻墙 / VPN 等敏感内容）。</div></div>
-    </div>
-    <div class="card">
-      <h2>AI 复盘配置（OpenAI 兼容）</h2>
-      <div class="form-row"><label>Base URL</label><input id="fAiBase" value="${esc(ai.base_url||'')}"><div class="hint">OpenAI 兼容接口地址，如 https://api.openai.com/v1，或 DeepSeek / 通义地址</div></div>
-      <div class="form-row"><label>API Key</label><input id="fAiKey" type="password" value="${esc(ai.api_key||'')}"></div>
-      <div class="form-row"><label>模型</label><input id="fAiModel" value="${esc(ai.model||'')}" placeholder="gpt-4o"></div>
-      <div class="form-row"><label>提示词（人设 / 风格 / 额外要求）</label><textarea id="fAiPrompt">${esc(ai.prompt||'')}</textarea><div class="hint">留空则用默认。系统会自动把你的运营数据拼到前面，你只需写角色与侧重点。</div></div>
-    </div>
-    <div style="margin-bottom:14px"><button class="btn" id="saveBtn">保存设置</button> <span id="saveMsg" class="note"></span></div>
-    <div class="section-divider"></div>
-    <div class="card"><h2>栏目管理</h2>${colHtml||'<div class="empty">暂无栏目</div>'}</div>`;
-  $('saveBtn').onclick=async()=>{
-    const newCfg={
-      account:$('fAccount').value.trim(),
-      copy_template:{
-        title:$('fTitle').value.trim(),
-        body:$('fBody').value,
-        tags:$('fTags').value.split(',').map(s=>s.trim()).filter(Boolean)
-      },
-      compliance:$('fComp').value.split(',').map(s=>s.trim()).filter(Boolean),
-      ai:{
-        base_url:$('fAiBase').value.trim(),
-        api_key:$('fAiKey').value.trim(),
-        model:$('fAiModel').value.trim(),
-        prompt:$('fAiPrompt').value
-      }
-    };
-    const r=await API('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newCfg)});
-    $('saveMsg').textContent=r.ok?'已保存 ✓':'保存失败';
-    if(r.ok){state.account=newCfg.account;$('brand').textContent=newCfg.account+' · 运营工作台';}
-  };
 }
 
 $('refreshBtn').onclick=()=>route();
