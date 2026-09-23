@@ -73,7 +73,9 @@ def main(date=None):
     png_dir.mkdir(parents=True, exist_ok=True)
     print("渲染 PNG ...")
     subprocess.run([VENV_PY, str(ROOT / "render.py"),
-                    str(html_file), str(png_dir)], check=True)
+                    str(html_file), str(png_dir)],
+                   env={**os.environ, "RENDER_CHROME_CHANNEL": os.environ.get("RENDER_CHROME_CHANNEL", "chrome")},
+                   check=True)
 
     # 5) gen_copy -> copy.json（直接调 make_copy，写指定目录，不乱找 data_*.json）
     copy = gc.make_copy(date, data["repos"], "本周", "每周")

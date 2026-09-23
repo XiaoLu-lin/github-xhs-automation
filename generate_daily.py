@@ -197,8 +197,10 @@ def main(date=None, col_id="github-trending"):
     # 3) render -> png（Playwright）
     png_dir = out_dir / "png"
     print("渲染 PNG ...")
-    subprocess.run([VENV_PY, str(ROOT / "render.py"),
-                    str(html_file), str(png_dir)], check=True)
+        subprocess.run([VENV_PY, str(ROOT / "render.py"),
+                        str(html_file), str(png_dir)],
+                       env={**os.environ, "RENDER_CHROME_CHANNEL": os.environ.get("RENDER_CHROME_CHANNEL", "chrome")},
+                       check=True)
 
     # 4) gen_copy -> copy.json
     print("生成文案 ...")
